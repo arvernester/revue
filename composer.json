@@ -1,0 +1,25 @@
+{
+    "name": "yugo/revue",
+    "description": "Un-offical getrevue.io package for PHP",
+    "type": "library",
+    "require": {
+        "guzzlehttp/guzzle": "^7.2"
+    },
+    "require-dev": {
+        "phpunit/phpunit": "^9.5",
+        "spatie/ray": "^1.19"
+    },
+    "license": "MIT",
+    "authors": [
+        {
+            "name": "Yugo",
+            "email": "dedy.yugo.purwanto@gmail.com"
+        }
+    ],
+    "minimum-stability": "stable",
+    "autoload": {
+        "psr-4": {
+            "Yugo\\Revue\\": "src/"
+        }
+    }
+}
