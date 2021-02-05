@@ -3,6 +3,7 @@
 namespace Yugo\Revue;
 
 use GuzzleHttp\Client;
+use GuzzleHttp\Psr7\Response;
 use InvalidArgumentException;
 
 class Revue
@@ -25,7 +26,7 @@ class Revue
         $this->client = $client;
         if (is_null($this->client)) {
             $this->client = new Client([
-                'base_uri' => self::HOST.self::VERSION.'/',
+                'base_uri' => self::HOST . self::VERSION . '/',
                 'headers' => [
                     'Authorization' => sprintf('Token %s', $this->token),
                 ]
@@ -35,17 +36,49 @@ class Revue
 
     public function getVersion(): string
     {
-        return self::VERSION;    
+        return self::VERSION;
     }
 
     public function lists(?string $id)
     {
         $path = 'lists';
         if (!empty($id)) {
-            $path .= '/'.$id;
+            $path .= '/' . $id;
         }
 
-        return $this->request($path);    
+        return $this->request($path);
+    }
+
+    public function exportsById($id)
+    {
+        return $this->request('exports/' . $id);
+    }
+
+    public function exports(bool $reformat = true)
+    {
+        if ($reformat === true) {
+            $request = $this->request('exports')->asArray();
+
+            $keys = [
+                'id',
+                'subscribed_file_name',
+                'subscribed_file_size',
+                'subscribed_content_type',
+                'unsubscribed_file_name',
+                'unsubscribed_file_size',
+                'unsubscribed_content_type',
+            ];
+
+            $formatted = array_map(function ($export) use ($keys) {
+                return array_combine($keys, $export);
+            }, $request);
+
+            $this->response = new Response(200, [], json_encode($formatted));
+
+            return $this;
+        }
+
+        return $this->request($path ?? 'exports');
     }
 
     public function issues(string $stage = null)
@@ -56,15 +89,15 @@ class Revue
         }
 
         if (!empty($stage)) {
-            $path = 'issues/'.$stage;
+            $path = 'issues/' . $stage;
         }
 
-        return $this->request($path ?? 'issues');    
+        return $this->request($path ?? 'issues');
     }
 
     public function subscribers()
     {
-        return $this->request($path ?? 'subscribers');    
+        return $this->request($path ?? 'subscribers');
     }
 
     public function subscribe(string $email, array $body = [])
@@ -74,7 +107,7 @@ class Revue
         }
         $payload['json'] = array_merge(['email' => $email], $body);
 
-        return $this->request('subscribers', 'POST', $payload);    
+        return $this->request('subscribers', 'POST', $payload);
     }
 
     public function unsubscribed()
@@ -84,7 +117,7 @@ class Revue
 
     public function me()
     {
-        return $this->request('accounts/me');    
+        return $this->request('accounts/me');
     }
 
     public function request(string $path, string $method = 'GET', array $payload = []): self
@@ -101,6 +134,6 @@ class Revue
 
     public function asArray(): array
     {
-        return json_decode((string) $this->response->getBody(), true); 
+        return json_decode((string) $this->response->getBody(), true);
     }
 }
