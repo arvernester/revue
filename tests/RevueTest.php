@@ -12,6 +12,10 @@ class RevueTests extends TestCase
 {
     private $mockHandler;
     private $client;
+
+    /**
+     * @var Revue
+     */
     private $revue;
 
     protected function setUp(): void
@@ -68,5 +72,77 @@ class RevueTests extends TestCase
 
         $this->assertSame($response, $revue->asArray());
         $this->assertSame(json_encode($response), $revue->asJson());
+    }
+
+    public function testExportAsRawResponse(): void
+    {
+        $response = [
+            [
+                1,
+                'subscribed.csv',
+                100,
+                'text/plain',
+                'unsubscribed.csv',
+                100,
+                'text/plain',
+            ]
+        ];
+        $this->mockHandler->append(new Response(200, [], json_encode($response)));
+
+        $exports = $this->revue->exports(false);
+
+        $this->assertSame($response, $exports->asArray());
+    }
+
+    public function testExportAsFormattedResponse(): void
+    {
+        $response = [
+            [
+                1,
+                'subscribed.csv',
+                100,
+                'text/plain',
+                'unsubscribed.csv',
+                100,
+                'text/plain',
+            ]
+        ];
+        $this->mockHandler->append(new Response(200, [], json_encode($response)));
+
+        $exports = $this->revue->exports(true);
+
+
+        $expected = [
+            'id' => 1,
+            'subscribed_file_name' => 'subscribed.csv',
+            'subscribed_file_size' => 100,
+            'subscribed_content_type' => 'text/plain',
+            'unsubscribed_file_name' => 'unsubscribed.csv',
+            'unsubscribed_file_size' => 100,
+            'unsubscribed_content_type' => 'text/plain',
+        ];
+
+        $this->assertSame([$expected], $exports->asArray());
+    }
+
+    public function testExportById(): void
+    {
+        $response = [
+            'id' => 1,
+            'subscribed_file_name' => 'subscribed.csv',
+            'subscribed_file_size' => 100,
+            'subscribed_content_type' => 'text/plain',
+            'unsubscribed_file_name' => 'unsubscribed.csv',
+            'unsubscribed_file_size' => 100,
+            'unsubscribed_content_type' => 'text/plain',
+            'unsubscribe_url' => 'https://getrevue.io/subscribed.csv',
+            'subscribed_url' => 'https://getrevue.io/unsubscribed.csv',
+        ];
+        $this->mockHandler->append(new Response(200, [], json_encode($response)));
+
+        $export = $this->revue->exportsById(1);
+
+        $this->assertArrayHasKey('id', $export->asArray());
+        $this->assertSame($response, $export->asArray());
     }
 }
