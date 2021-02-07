@@ -39,19 +39,24 @@ class Revue
         return self::VERSION;
     }
 
-    public function lists(?string $id)
+    public function listsById($id)
     {
-        $path = 'lists';
-        if (!empty($id)) {
-            $path .= '/' . $id;
-        }
+        return $this->request('lists/' . $id);
+    }
 
-        return $this->request($path);
+    public function lists()
+    {
+        return $this->request('lists');
     }
 
     public function exportsById($id)
     {
         return $this->request('exports/' . $id);
+    }
+
+    public function exportsList($id)
+    {
+        return $this->request('exports/lists/' . $id, 'POST');
     }
 
     public function exports(bool $reformat = true)
@@ -81,10 +86,22 @@ class Revue
         return $this->request($path ?? 'exports');
     }
 
+    public function addItems($issuesId, array $data = [])
+    {
+        $payload['form_params'] = $data;
+
+        return $this->request('issues/' . $issuesId . '/items', 'POST', $payload);
+    }
+
+    public function items()
+    {
+        return $this->request('items');
+    }
+
     public function issues(string $stage = null)
     {
         $stages = ['latest', 'current'];
-        if (!in_array($stage, $stages)) {
+        if (!empty($stage) && !in_array($stage, $stages)) {
             throw new InvalidArgumentException(sprintf('Path %s is not available.', $stage));
         }
 
