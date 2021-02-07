@@ -2,6 +2,7 @@
 
 use GuzzleHttp\Client;
 use GuzzleHttp\Exception\ClientException;
+use GuzzleHttp\Exception\RequestException;
 use GuzzleHttp\Handler\MockHandler;
 use GuzzleHttp\HandlerStack;
 use GuzzleHttp\Psr7\Response;
@@ -144,5 +145,63 @@ class RevueTests extends TestCase
 
         $this->assertArrayHasKey('id', $export->asArray());
         $this->assertSame($response, $export->asArray());
+    }
+
+    public function testInvalidIssuesParam(): void
+    {
+        $this->expectException(InvalidArgumentException::class);
+
+        $this->revue->issues('previous');
+    }
+
+    public function testAddItemToIssue(): void
+    {
+        $issueId = 1;
+        $now = (new DateTimeImmutable)->format(DateTime::ISO8601);
+        $response = [
+            'title' => 'Revue',
+            'created_at' => $now,
+            'url' => $url = 'https://getrevue.io',
+            'description' => $description = 'Revue makes it easy for writers and publishers to send editorial newsletters — and get paid',
+            'order' => null,
+            'title_display' => $title = 'Revue',
+            'short_url' => 'getrevue.io',
+            'thumb_url' => 'images/thumb/missing.png',
+            'default_image' => 'images/web/missing.png',
+            'hash_id' => '7PdEoo',
+        ];
+        $this->mockHandler->append(new Response(200, [], json_encode($response)));
+
+        $addedItem = $this->revue->addItems($issueId, [
+            'url' => $url,
+            'title' => $title,
+            'description' => $description,
+            'created_at' => $now,
+        ]);
+
+        $this->assertArrayHasKey('hash_id', $addedItem->asArray());
+        $this->assertSame($response, $addedItem->asArray());
+    }
+
+    public function testGetItems(): void
+    {
+        $now = (new DateTimeImmutable)->format(DateTime::ISO8601);
+        $response = [
+            'title' => 'Revue',
+            'created_at' => $now,
+            'url' => 'https://getrevue.io',
+            'description' => 'Revue makes it easy for writers and publishers to send editorial newsletters — and get paid',
+            'order' => null,
+            'title_display' => 'Revue',
+            'short_url' => 'getrevue.io',
+            'thumb_url' => 'images/thumb/missing.png',
+            'default_image' => 'images/web/missing.png',
+            'hash_id' => '7PdEoo',
+        ];
+        $this->mockHandler->append(new Response(200, [], json_encode([$response])));
+
+        $items = $this->revue->items();
+
+        $this->assertSame([$response], $items->asArray());
     }
 }
